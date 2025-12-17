@@ -1,4 +1,4 @@
-"""用户命令处理器"""
+"""Trình xử lý lệnh người dùng"""
 import logging
 from typing import Optional
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /start 命令"""
+    """Xử lý lệnh /start"""
     if await reject_group_command(update):
         return
 
@@ -27,16 +27,16 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: 
     username = user.username or ""
     full_name = user.full_name or ""
 
-    # 已初始化直接返回
+    # Nếu đã khởi tạo thì trả về
     if db.user_exists(user_id):
         await update.message.reply_text(
-            f"欢迎回来，{full_name}！\n"
-            "您已经初始化过了。\n"
-            "发送 /help 查看可用命令。"
+            f"Chào mừng trở lại, {full_name}!\n"
+            "Bạn đã khởi tạo rồi.\n"
+            "Gửi /help để xem các lệnh khả dụng."
         )
         return
 
-    # 邀请参与
+    # Mời tham gia
     invited_by: Optional[int] = None
     if context.args:
         try:
@@ -46,16 +46,16 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: 
         except Exception:
             invited_by = None
 
-    # 创建用户
+    # Tạo người dùng
     if db.create_user(user_id, username, full_name, invited_by):
         welcome_msg = get_welcome_message(full_name, bool(invited_by))
         await update.message.reply_text(welcome_msg)
     else:
-        await update.message.reply_text("注册失败，请稍后重试。")
+        await update.message.reply_text("Đăng ký thất bại, vui lòng thử lại sau.")
 
 
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /about 命令"""
+    """Xử lý lệnh /about"""
     if await reject_group_command(update):
         return
 
@@ -63,7 +63,7 @@ async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: 
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /help 命令"""
+    """Xử lý lệnh /help"""
     if await reject_group_command(update):
         return
 
@@ -73,108 +73,108 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: D
 
 
 async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /balance 命令"""
+    """Xử lý lệnh /balance"""
     if await reject_group_command(update):
         return
 
     user_id = update.effective_user.id
 
     if db.is_user_blocked(user_id):
-        await update.message.reply_text("您已被拉黑，无法使用此功能。")
+        await update.message.reply_text("Bạn đã bị chặn, không thể sử dụng tính năng này.")
         return
 
     user = db.get_user(user_id)
     if not user:
-        await update.message.reply_text("请先使用 /start 注册。")
+        await update.message.reply_text("Vui lòng sử dụng /start để đăng ký trước.")
         return
 
     await update.message.reply_text(
-        f"💰 积分余额\n\n当前积分：{user['balance']} 分"
+        f"💰 Số dư điểm\n\nĐiểm hiện tại: {user['balance']} điểm"
     )
 
 
 async def checkin_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /qd 签到命令 - 临时禁用"""
+    """Xử lý lệnh /qd điểm danh - Tạm thời vô hiệu hóa"""
     user_id = update.effective_user.id
 
-    # 临时禁用签到功能（修复bug中）
+    # Tạm thời vô hiệu hóa chức năng điểm danh (đang sửa lỗi)
     # await update.message.reply_text(
-    #     "⚠️ 签到功能临时维护中\n\n"
-    #     "由于发现bug，签到功能暂时关闭，正在修复。\n"
-    #     "预计很快恢复，给您带来不便敬请谅解。\n\n"
-    #     "💡 您可以通过以下方式获取积分：\n"
-    #     "• 邀请好友 /invite（+2积分）\n"
-    #     "• 使用卡密 /use <卡密>"
+    #     "⚠️ Chức năng điểm danh đang bảo trì\n\n"
+    #     "Do phát hiện lỗi, chức năng điểm danh tạm thời đóng để sửa chữa.\n"
+    #     "Dự kiến sẽ sớm hoạt động lại, mong bạn thông cảm.\n\n"
+    #     "💡 Bạn có thể nhận điểm qua:\n"
+    #     "• Mời bạn bè /invite (+2 điểm)\n"
+    #     "• Sử dụng mã thẻ /use <mã_thẻ>"
     # )
     # return
     
-    # ===== 以下代码已禁用 =====
+    # ===== Code dưới đây đã bị vô hiệu hóa (trong phiên bản gốc) =====
     if db.is_user_blocked(user_id):
-        await update.message.reply_text("您已被拉黑，无法使用此功能。")
+        await update.message.reply_text("Bạn đã bị chặn, không thể sử dụng tính năng này.")
         return
 
     if not db.user_exists(user_id):
-        await update.message.reply_text("请先使用 /start 注册。")
+        await update.message.reply_text("Vui lòng sử dụng /start để đăng ký trước.")
         return
 
-    # 第1层检查：在命令处理器层面检查
+    # Kiểm tra lớp 1: Kiểm tra ở tầng xử lý lệnh
     if not db.can_checkin(user_id):
-        await update.message.reply_text("❌ 今天已经签到过了，明天再来吧。")
+        await update.message.reply_text("❌ Hôm nay bạn đã điểm danh rồi, mai quay lại nhé.")
         return
 
-    # 第2层检查：在数据库层面执行（SQL原子操作）
+    # Kiểm tra lớp 2: Thực thi ở tầng cơ sở dữ liệu (thao tác nguyên tử SQL)
     if db.checkin(user_id):
         user = db.get_user(user_id)
         await update.message.reply_text(
-            f"✅ 签到成功！\n获得积分：+1\n当前积分：{user['balance']} 分"
+            f"✅ Điểm danh thành công!\nNhận được: +1 điểm\nĐiểm hiện tại: {user['balance']} điểm"
         )
     else:
-        # 如果数据库层面返回False，说明今天已签到（双重保险）
-        await update.message.reply_text("❌ 今天已经签到过了，明天再来吧。")
+        # Nếu tầng DB trả về False, nghĩa là hôm nay đã điểm danh (bảo hiểm kép)
+        await update.message.reply_text("❌ Hôm nay bạn đã điểm danh rồi, mai quay lại nhé.")
 
 
 async def invite_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /invite 邀请命令"""
+    """Xử lý lệnh /invite mời bạn bè"""
     if await reject_group_command(update):
         return
 
     user_id = update.effective_user.id
 
     if db.is_user_blocked(user_id):
-        await update.message.reply_text("您已被拉黑，无法使用此功能。")
+        await update.message.reply_text("Bạn đã bị chặn, không thể sử dụng tính năng này.")
         return
 
     if not db.user_exists(user_id):
-        await update.message.reply_text("请先使用 /start 注册。")
+        await update.message.reply_text("Vui lòng sử dụng /start để đăng ký trước.")
         return
 
     bot_username = context.bot.username
     invite_link = f"https://t.me/{bot_username}?start={user_id}"
 
     await update.message.reply_text(
-        f"🎁 您的专属邀请链接：\n{invite_link}\n\n"
-        "每邀请 1 位成功注册，您将获得 2 积分。"
+        f"🎁 Liên kết mời riêng của bạn:\n{invite_link}\n\n"
+        "Mỗi khi mời 1 người đăng ký thành công, bạn sẽ nhận được 2 điểm."
     )
 
 
 async def use_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Database):
-    """处理 /use 命令 - 使用卡密"""
+    """Xử lý lệnh /use - Sử dụng mã thẻ"""
     if await reject_group_command(update):
         return
 
     user_id = update.effective_user.id
 
     if db.is_user_blocked(user_id):
-        await update.message.reply_text("您已被拉黑，无法使用此功能。")
+        await update.message.reply_text("Bạn đã bị chặn, không thể sử dụng tính năng này.")
         return
 
     if not db.user_exists(user_id):
-        await update.message.reply_text("请先使用 /start 注册。")
+        await update.message.reply_text("Vui lòng sử dụng /start để đăng ký trước.")
         return
 
     if not context.args:
         await update.message.reply_text(
-            "使用方法: /use <卡密>\n\n示例: /use wandouyu"
+            "Cách sử dụng: /use <Mã_Thẻ>\n\nVí dụ: /use wandouyu"
         )
         return
 
@@ -182,15 +182,15 @@ async def use_command(update: Update, context: ContextTypes.DEFAULT_TYPE, db: Da
     result = db.use_card_key(key_code, user_id)
 
     if result is None:
-        await update.message.reply_text("卡密不存在，请检查后重试。")
+        await update.message.reply_text("Mã thẻ không tồn tại, vui lòng kiểm tra lại.")
     elif result == -1:
-        await update.message.reply_text("该卡密已达到使用次数上限。")
+        await update.message.reply_text("Mã thẻ này đã đạt giới hạn số lần sử dụng.")
     elif result == -2:
-        await update.message.reply_text("该卡密已过期。")
+        await update.message.reply_text("Mã thẻ này đã hết hạn.")
     elif result == -3:
-        await update.message.reply_text("您已经使用过该卡密。")
+        await update.message.reply_text("Bạn đã sử dụng mã thẻ này rồi.")
     else:
         user = db.get_user(user_id)
         await update.message.reply_text(
-            f"卡密使用成功！\n获得积分：{result}\n当前积分：{user['balance']}"
+            f"Sử dụng mã thẻ thành công!\nNhận được: {result} điểm\nĐiểm hiện tại: {user['balance']} điểm"
         )
